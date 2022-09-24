@@ -158,7 +158,8 @@ cleanup() {
             else
                 umount mnt || ( sleep 1 && sync && umount mnt )
             fi
-            rmdir mnt
+            # rmdir mnt
+            rm -rf mnt
         else
             rm -rf mnt
         fi
