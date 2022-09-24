@@ -22,7 +22,6 @@ public:
         , m_response_code(0)
         , m_checking_disabled(false)
         , m_authenticated_data(false)
-        , m_zero(false)
         , m_recursion_available(false)
     {
     }
@@ -85,7 +84,6 @@ private:
     u8 m_response_code : 4;
     bool m_checking_disabled : 1;
     bool m_authenticated_data : 1;
-    bool m_zero : 1;
     bool m_recursion_available : 1;
 
     NetworkOrdered<u16> m_question_count;

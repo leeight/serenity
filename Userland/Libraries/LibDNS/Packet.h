@@ -20,6 +20,16 @@ enum class ShouldRandomizeCase {
     Yes
 };
 
+enum OpCodeType: u8 {
+    Query = 0,
+    IQuery = 1, // Inverse Query, OBSOLETE
+    Status = 2,
+    Unassigned = 3,
+    Notify = 4,
+    Update = 5,
+    DSO = 6,    // DNS Stateful Operations (DSO)
+};
+
 class Packet {
 public:
     Packet() = default;

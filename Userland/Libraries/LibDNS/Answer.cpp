@@ -110,7 +110,8 @@ ErrorOr<void> decode(Decoder& decoder, DNS::Answer& answer)
 {
     String name;
     TRY(decoder.decode(name));
-    u16 record_type, class_code;
+    u16 record_type;
+    u16 class_code;
     TRY(decoder.decode(record_type));
     TRY(decoder.decode(class_code));
     u32 ttl;

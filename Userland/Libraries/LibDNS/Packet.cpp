@@ -39,8 +39,7 @@ ByteBuffer Packet::to_byte_buffer() const
     else
         header.set_is_response();
     header.set_authoritative_answer(m_authoritative_answer);
-    // FIXME: What should this be?
-    header.set_opcode(0);
+    header.set_opcode(OpCodeType::Query);
     header.set_response_code(m_code);
     header.set_truncated(false); // hopefully...
     header.set_recursion_desired(m_recursion_desired);
@@ -52,12 +51,12 @@ ByteBuffer Packet::to_byte_buffer() const
     DuplexMemoryStream stream;
 
     stream << ReadonlyBytes { &header, sizeof(header) };
-    for (auto& question : m_questions) {
+    for (const auto& question : m_questions) {
         stream << question.name();
         stream << htons((u16)question.record_type());
         stream << htons(question.raw_class_code());
     }
-    for (auto& answer : m_answers) {
+    for (const auto& answer : m_answers) {
         stream << answer.name();
         stream << htons((u16)answer.type());
         stream << htons(answer.raw_class_code());
