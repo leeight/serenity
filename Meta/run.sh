@@ -256,6 +256,7 @@ if [ -z "$SERENITY_MACHINE" ]; then
         SERENITY_MACHINE="-M raspi3b -serial stdio"
     else
         SERENITY_MACHINE="
+        -machine pc-i440fx-7.0
         -m $SERENITY_RAM_SIZE
         -smp $SERENITY_CPUS
         -display $SERENITY_QEMU_DISPLAY_BACKEND
