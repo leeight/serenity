@@ -476,7 +476,11 @@ DefaultRootCACertificates::DefaultRootCACertificates()
         return;
     }
     auto config = config_result.release_value();
+    reload_certificates(config);
+}
 
+void DefaultRootCACertificates::reload_certificates(NonnullRefPtr<Core::ConfigFile>& config)
+{
     for (auto& entity : config->groups()) {
         for (auto& subject : config->keys(entity)) {
             auto certificate_base64 = config->read_entry(entity, subject);
