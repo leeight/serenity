@@ -27,6 +27,11 @@ public:
     virtual String to_utf8(StringView) override;
 };
 
+class GBKDecoder final : public Decoder {
+public:
+    virtual void process(StringView, Function<void(u32)> on_code_point) override;
+};
+
 class UTF16BEDecoder final : public Decoder {
 public:
     virtual void process(StringView, Function<void(u32)> on_code_point) override;

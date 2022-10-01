@@ -5,15 +5,18 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
+#include "AK/Format.h"
 #include <AK/String.h>
 #include <AK/StringBuilder.h>
 #include <AK/Utf8View.h>
 #include <LibTextCodec/Decoder.h>
+#include <LibTextCodec/gbk.h>
 
 namespace TextCodec {
 
 namespace {
 Latin1Decoder s_latin1_decoder;
+GBKDecoder s_gbk_decoder;
 UTF8Decoder s_utf8_decoder;
 UTF16BEDecoder s_utf16be_decoder;
 UTF16LEDecoder s_utf16le_decoder;
@@ -50,6 +53,8 @@ Decoder* decoder_for(String const& a_encoding)
             return &s_latin9_decoder;
         if (encoding.value().equals_ignoring_case("windows-1254"sv))
             return &s_turkish_decoder;
+        if (encoding.value().equals_ignoring_case("gbk"sv) || encoding.value().equals_ignoring_case("gb2312"sv))
+            return &s_gbk_decoder;
         if (encoding.value().equals_ignoring_case("x-user-defined"sv))
             return &s_x_user_defined_decoder;
     }
@@ -230,6 +235,21 @@ String UTF8Decoder::to_utf8(StringView input)
     }
 
     return bomless_input;
+}
+
+void GBKDecoder::process(StringView input, Function<void(u32)> on_code_point)
+{
+    size_t length = input.length() - (input.length() % 2);
+    char const* s = input.characters_without_null_termination();
+    size_t n = input.length();
+    for (size_t i = 0; i < length; i += 2) {
+        ucs4_t pwc = 0;
+        gbk_mbtowc(&pwc, s, n - i);
+        if (pwc != 0) {
+            on_code_point(pwc);
+        }
+        s += 2;
+    }
 }
 
 void UTF16BEDecoder::process(StringView input, Function<void(u32)> on_code_point)
