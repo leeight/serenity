@@ -172,7 +172,7 @@ static ThrowCompletionOr<Value> regexp_builtin_exec(VM& vm, RegExpObject& regexp
     auto last_index_value = TRY(regexp_object.get(vm.names.lastIndex));
     auto last_index = TRY(last_index_value.to_length(vm));
 
-    auto& regex = regexp_object.regex();
+    auto const& regex = regexp_object.regex();
 
     // 3. Let flags be R.[[OriginalFlags]].
     // 4. If flags contains "g", let global be true; else let global be false.
@@ -263,6 +263,7 @@ static ThrowCompletionOr<Value> regexp_builtin_exec(VM& vm, RegExpObject& regexp
 
     // 24. Let indices be a new empty List.
     Vector<Optional<Match>> indices;
+    Vector<Utf16View> captured_values;
 
     // 25. Let groupNames be a new empty List.
     HashMap<FlyString, Match> group_names;
@@ -296,6 +297,7 @@ static ThrowCompletionOr<Value> regexp_builtin_exec(VM& vm, RegExpObject& regexp
             captured_value = js_undefined();
             // ii. Append undefined to indices.
             indices.append({});
+            captured_values.append(Utf16View());
         }
         // c. Else,
         else {
@@ -309,6 +311,7 @@ static ThrowCompletionOr<Value> regexp_builtin_exec(VM& vm, RegExpObject& regexp
             captured_value = js_string(vm, capture.view.u16_view());
             // vi Append capture to indices.
             indices.append(Match::create(capture));
+            captured_values.append(capture.view.u16_view());
         }
 
         // d. Perform ! CreateDataPropertyOrThrow(A, ! ToString(𝔽(i)), capturedValue).
@@ -329,6 +332,27 @@ static ThrowCompletionOr<Value> regexp_builtin_exec(VM& vm, RegExpObject& regexp
         else {
             // i. Append undefined to groupNames.
             // See the note in MakeIndicesArray for why this step is skipped.
+        }
+    }
+
+    // https://github.com/tc39/proposal-regexp-legacy-features#regexpbuiltinexec--r-s-
+    // 5. Let thisRealm be the current Realm Record.
+    auto* this_realm = &realm;
+    // 6. Let rRealm be the value of R's [[Realm]] internal slot.
+    auto* rRealm = regexp_object.vm().current_realm();
+    // 7. If SameValue(thisRealm, rRealm) is true, then
+    if (this_realm == rRealm) {
+        // i. If the value of R’s [[LegacyFeaturesEnabled]] internal slot is true, then
+        if (regexp_object.has_legacy_features()) {
+            // Perform UpdateLegacyRegExpStaticProperties(%RegExp%, S, lastIndex, e, capturedValues).
+            auto* regexp_constructor = realm.intrinsics().regexp_constructor();
+            regexp_constructor->update_legacy_properties(string, match_indices.start_index, match_indices.end_index, captured_values);
+        }
+        // ii. Else,
+        else {
+            // Perform InvalidateLegacyRegExpStaticProperties(%RegExp%).
+            auto* regexp_constructor = realm.intrinsics().regexp_constructor();
+            regexp_constructor->reset_legacy_properties();
         }
     }
 
@@ -1074,6 +1098,23 @@ JS_DEFINE_NATIVE_FUNCTION(RegExpPrototype::compile)
         // a. If flags is not undefined, throw a TypeError exception.
         if (!flags.is_undefined())
             return vm.throw_completion<TypeError>(ErrorType::NotUndefined, flags.to_string_without_side_effects());
+
+        // https://github.com/tc39/proposal-regexp-legacy-features#regexpprototypecompile--pattern-flags-
+        // 3. Let thisRealm be the current Realm Record.
+        auto* realm = vm.current_realm();
+
+        // 4. Let oRealm be the value of O’s [[Realm]] internal slot.
+        auto* oRealm = regexp_object->vm().current_realm();
+
+        // 5. If SameValue(thisRealm, oRealm) is false, throw a TypeError exception.
+        if (realm != oRealm) {
+            return TypeError::create(*realm, "SameValue(thisRealm, oRealm) is false");
+        }
+
+        // 6. If the value of R’s [[LegacyFeaturesEnabled]] internal slot is false, throw a TypeError exception.
+        if (!regexp_object->has_legacy_features()) {
+            return TypeError::create(*realm, "the value of R's [[LegacyFeaturesEnabled]] internal slot is false");
+        }
 
         auto& regexp_pattern = static_cast<RegExpObject&>(pattern.as_object());
 

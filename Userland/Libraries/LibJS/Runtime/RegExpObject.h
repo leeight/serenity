@@ -49,6 +49,8 @@ public:
     String const& flags() const { return m_flags; }
     Regex<ECMA262> const& regex() { return *m_regex; }
     Regex<ECMA262> const& regex() const { return *m_regex; }
+    bool has_legacy_features() const { return m_has_legacy_features; }
+    void set_has_legacy_features(bool flag) { m_has_legacy_features = flag; }
 
 private:
     RegExpObject(Object& prototype);
@@ -56,6 +58,7 @@ private:
 
     String m_pattern;
     String m_flags;
+    bool m_has_legacy_features { true };
     Optional<Regex<ECMA262>> m_regex;
 };
 
